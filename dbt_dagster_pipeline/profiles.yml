@@ -1,0 +1,28 @@
+# BigQuery profile for the gaming data platform.
+#
+# Auth (local dev, recommended):
+#   gcloud auth application-default login
+#   -> uses Application Default Credentials, method: oauth below. No key files.
+#
+# Auth (service account key, alternative):
+#   set method to 'service-account' and uncomment keyfile, OR just set
+#   GOOGLE_APPLICATION_CREDENTIALS to the key path and keep method 'oauth'.
+#
+# In CI (GitHub Actions) you'd use Workload Identity Federation (keyless) — same
+# project/dataset, just a different auth handshake. The models do not change.
+gaming_platform:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('GCP_PROJECT') }}"
+      # Default dataset (target.schema). All models override this per-layer via the
+      # generate_schema_name macro, so this is only a fallback.
+      dataset: "{{ env_var('DBT_DATASET_PREFIX', '') }}marts"
+      location: "{{ env_var('BQ_LOCATION', 'US') }}"
+      threads: 4
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      # keyfile: /absolute/path/to/service-account.json   # only if method: service-account

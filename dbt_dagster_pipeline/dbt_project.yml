@@ -1,0 +1,30 @@
+name: "gaming_platform"
+version: "1.0.0"
+config-version: 2
+
+profile: "gaming_platform"
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# Layer -> schema routing. The generate_schema_name override (macros/) turns these
+# into clean schema names (staging / intermediate / marts) instead of dev_staging etc.
+models:
+  gaming_platform:
+    staging:
+      +materialized: view
+      +schema: gamedata_64156695_staging
+    intermediate:
+      +materialized: view
+      +schema: gamedata_64156695_staging
+    marts:
+      +materialized: table
+      +schema: gamedata_64156695_staging
+
+# Compile-time vars. canonical_field_map documents intent; the real mapping lives
+# in each staging model. event_lookback_hours feeds the incremental watermark demo.
+vars:
+  event_lookback_hours: 0

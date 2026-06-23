@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_game_a_events
+    description: "Game A events normalised to the canonical schema."
+    columns:
+      - name: player_key
+        description: "Canonical player id (string)."
+        data_tests: [not_null]
+      - name: game_name
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["game_a"]
+      - name: event_timestamp
+        data_tests: [not_null]
+
+  - name: stg_game_b_events
+    description: "Game B events normalised to the canonical schema."
+    columns:
+      - name: player_key
+        data_tests: [not_null]
+      - name: game_name
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["game_b"]
+      - name: event_timestamp
+        data_tests: [not_null]

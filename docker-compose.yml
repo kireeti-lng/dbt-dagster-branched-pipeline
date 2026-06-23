@@ -1,0 +1,19 @@
+# Optional. `docker compose up` builds the image, generates data, and serves the
+# Dagster UI at http://localhost:3000, talking to BigQuery in your GCP project.
+#
+# Auth: this mounts your local Application Default Credentials read-only into the
+# container. Run `gcloud auth application-default login` on the host first.
+# (On Linux the ADC file is ~/.config/gcloud/application_default_credentials.json)
+services:
+  platform:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      GCP_PROJECT: ${GCP_PROJECT}
+      BQ_LOCATION: ${BQ_LOCATION:-US}
+      DBT_DATASET_PREFIX: ${DBT_DATASET_PREFIX:-gaming_proto_}
+      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
+    volumes:
+      - ./data:/app/data
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/gcp/adc.json:ro
