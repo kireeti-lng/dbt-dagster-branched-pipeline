@@ -1,17 +1,6 @@
 version: 2
 
 
-models:
-
-  - name: int_player_activity_unioned
-    description: >
-      Combines player activity from multiple gameplay event sources
-      into a unified intermediate model used by downstream marts.
-  
-  - name: fct_player_activity
-
-  - name: fct_player_activity_incremental
-
 
 macros:
 
