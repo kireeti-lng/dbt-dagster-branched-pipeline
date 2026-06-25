@@ -42,6 +42,47 @@ jobs:
             pre-commit \
             sqlfluff \
             sqlfluff-templater-dbt
+            
+      # ---------------------------------------------------------------
+      # Authenticate to Google Cloud
+      # ---------------------------------------------------------------
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+
+      # ---------------------------------------------------------------
+      # Install gcloud
+      # ---------------------------------------------------------------
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: bq
+
+      # ---------------------------------------------------------------
+      # Verify Authentication
+      # ---------------------------------------------------------------
+      - name: Verify Authentication
+        run: |
+          echo "Authenticated Account:"
+          gcloud auth list
+
+          echo ""
+          echo "Current Configuration:"
+          gcloud config list
+
+      # ---------------------------------------------------------------
+      # Verify BigQuery Access
+      # ---------------------------------------------------------------
+      - name: Verify BigQuery Access
+        env:
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+        run: |
+          echo "Listing datasets in $GCP_PROJECT..."
+          bq ls --project_id=$GCP_PROJECT
+
 
       - name: Install dbt Dependencies
         working-directory: ./dbt_dagster_pipeline
