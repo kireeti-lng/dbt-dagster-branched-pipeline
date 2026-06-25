@@ -17,36 +17,94 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
 
     steps:
+      # ------------------------------------------------------------------
+      # Checkout Repository
+      # ------------------------------------------------------------------
       - name: Checkout Code Base
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------------------
+      # Python
+      # ------------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # ------------------------------------------------------------------
+      # Install uv
+      # ------------------------------------------------------------------
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install dependencies
+      # ------------------------------------------------------------------
+      # Install Python Dependencies
+      # ------------------------------------------------------------------
+      - name: Install Dependencies
         run: uv sync
 
-      - name: Execute Data Testing & Validation
+      # ------------------------------------------------------------------
+      # Authenticate to Google Cloud
+      # ------------------------------------------------------------------
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      # ------------------------------------------------------------------
+      # Install Google Cloud SDK
+      # ------------------------------------------------------------------
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: "bq"
+
+      # ------------------------------------------------------------------
+      # Verify Authentication
+      # ------------------------------------------------------------------
+      - name: Verify Authentication
+        run: |
+          echo "Authenticated Account:"
+          gcloud auth list
+
+          echo ""
+          echo "Current Configuration:"
+          gcloud config list
+
+      # ------------------------------------------------------------------
+      # Verify BigQuery Access
+      # ------------------------------------------------------------------
+      - name: Verify BigQuery Access
+        env:
+          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+        run: |
+          echo "Listing datasets in $GCP_PROJECT..."
+          bq ls --project_id=$GCP_PROJECT
+
+      # ------------------------------------------------------------------
+      # Run dbt Validation
+      # ------------------------------------------------------------------
+      - name: Execute dbt Validation
         working-directory: ./dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
           GCP_PROJECT: ${{ vars.GCP_PROJECT }}
           BQ_LOCATION: ${{ vars.BQ_LOCATION }}
           DBT_DATASET_PREFIX: ${{ vars.DBT_DATASET_PREFIX }}
-          DB_PASSWORD: ${{ secrets.DB_DEV_PASSWORD }}
-        run: |
-          uv run dbt deps
-          uv run dbt debug
-          uv run dbt build
+          run: |
+            uv run dbt deps
+            uv run dbt debug --target ci
+            uv run dbt build --target ci
 
+      # ------------------------------------------------------------------
+      # Auto Merge Pull Request
+      # ------------------------------------------------------------------
       - name: Auto Merge Pull Request
+        if: success()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
