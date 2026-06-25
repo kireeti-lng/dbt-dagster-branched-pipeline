@@ -16,7 +16,7 @@
 #}
 
 with source as (
-    select * from {{ source('raw', 'raw_game_b_events') }}
+    select * from {{ source('raw_tables', 'raw_game_b_events') }}
 ),
 
 canonical as (
