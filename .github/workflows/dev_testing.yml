@@ -54,6 +54,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
 
       # ------------------------------------------------------------------
       # Install Google Cloud SDK
@@ -95,10 +96,10 @@ jobs:
           GCP_PROJECT: ${{ vars.GCP_PROJECT }}
           BQ_LOCATION: ${{ vars.BQ_LOCATION }}
           DBT_DATASET_PREFIX: ${{ vars.DBT_DATASET_PREFIX }}
-          run: |
-            uv run dbt deps
-            uv run dbt debug --target ci
-            uv run dbt build --target ci
+        run: |
+          uv run dbt deps
+          uv run dbt debug --target ci
+          uv run dbt build --target ci
 
       # ------------------------------------------------------------------
       # Auto Merge Pull Request
