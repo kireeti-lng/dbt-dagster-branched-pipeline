@@ -3,3 +3,8 @@ repos:
     rev: v2.0.9
     hooks:
       - id: check-model-has-description
+        args:
+          - --manifest
+          - dbt_dagster_pipeline/target/manifest.json
+          - --project-dir
+          - dbt_dagster_pipeline

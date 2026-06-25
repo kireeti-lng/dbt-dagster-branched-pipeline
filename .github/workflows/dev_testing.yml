@@ -50,6 +50,14 @@ jobs:
         run: |
           uv run dbt deps
 
+      - name: Generate dbt Manifest
+        working-directory: ./dbt_dagster_pipeline
+        env:
+          DBT_PROFILES_DIR: .
+        run: |
+          uv run dbt deps
+          uv run dbt parse
+          
       - name: Execute Quality Gate Checks
         run: |
           uv run pre-commit run --all-files
