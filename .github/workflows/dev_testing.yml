@@ -1,0 +1,46 @@
+name: Dev Testing & Auto-Merge
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  dbt-ci-test:
+    name: Run dbt Validation Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Initialize Python Runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Deploy uv Package Manager
+        run: |
+          curl -LsSf https://astral.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Replicate Dependencies from uv.lock
+        run: uv sync
+
+      - name: Execute Data Testing & Validation
+        env:
+          DBT_PROFILES_DIR: .
+          DB_PASSWORD: ${{ secrets.DB_DEV_PASSWORD }}
+        run: |
+          uv run dbt deps
+          uv run dbt debug
+          uv run dbt build
+
+      - name: Force Merge Pull Request via GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch
