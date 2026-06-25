@@ -1,15 +1,26 @@
 [project]
 name = "dbt-dagster-branched-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "Dagster + dbt pipeline"
 readme = "README.md"
 requires-python = ">=3.12"
+
 dependencies = [
-    "dagster>=1.13.10",
-    "dbt-bigquery>=1.11.2",
-    "dbt-core>=1.11.11",
-    "duckdb>=1.5.4",
-    "pip>=26.1.2",
+    "dagster==1.13.10",
+    "dagster-dbt==0.29.10",
+    "dagster-webserver==1.13.10",
+
+    "dbt-core==1.11.11",
+    "dbt-bigquery==1.11.2",
+
+    "google-cloud-bigquery>=3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "sqlfluff",
+    "sqlfluff-templater-dbt",
 ]
 
 [tool.dagster]

@@ -6,5 +6,3 @@ repos:
         args:
           - --manifest
           - dbt_dagster_pipeline/target/manifest.json
-          - --project-dir
-          - dbt_dagster_pipeline

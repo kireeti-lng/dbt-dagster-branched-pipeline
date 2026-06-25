@@ -9,99 +9,76 @@ on:
       - synchronize
       - reopened
 
+
+# ==================================================================
+# JOB 1: Code Quality Gate
+# ==================================================================
+
+
 jobs:
 
-  # ==================================================================
-  # JOB 1: Code Quality Gate
-  # ==================================================================
-  dbt-quality-gate:
-    name: Code Scanning & Gate Pass
-    runs-on: ubuntu-latest
+dbt-quality-gate:
+  name: Code Scanning & Gate Pass
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code Base
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout Code Base
+      uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
 
-      - name: Create virtual environment
-        run: uv venv
+    - name: Install Project Dependencies
+      run: uv sync --group dev
 
-      - name: Install Dependencies
-        run: uv sync
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        create_credentials_file: true
 
-      - name: Install Linting Dependencies
-        run: |
-          uv pip install \
-            pre-commit \
-            sqlfluff \
-            sqlfluff-templater-dbt
-            
-      # ---------------------------------------------------------------
-      # Authenticate to Google Cloud
-      # ---------------------------------------------------------------
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          create_credentials_file: true
+    - name: Setup Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        install_components: bq
 
-      # ---------------------------------------------------------------
-      # Install gcloud
-      # ---------------------------------------------------------------
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: bq
+    - name: Verify Authentication
+      run: |
+        gcloud auth list
+        gcloud config list
 
-      # ---------------------------------------------------------------
-      # Verify Authentication
-      # ---------------------------------------------------------------
-      - name: Verify Authentication
-        run: |
-          echo "Authenticated Account:"
-          gcloud auth list
+    - name: Verify BigQuery Access
+      env:
+        GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+      run: |
+        bq ls --project_id=$GCP_PROJECT
 
-          echo ""
-          echo "Current Configuration:"
-          gcloud config list
+    - name: Generate dbt Manifest
+      working-directory: ./dbt_dagster_pipeline
+      env:
+        DBT_PROFILES_DIR: .
+        GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+        BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
+        DBT_DATASET_PREFIX: ${{ secrets.DBT_DATASET_PREFIX }}
+      run: |
+        uv run dbt deps
+        uv run dbt parse --target ci
 
-      # ---------------------------------------------------------------
-      # Verify BigQuery Access
-      # ---------------------------------------------------------------
-      - name: Verify BigQuery Access
-        env:
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-        run: |
-          echo "Listing datasets in $GCP_PROJECT..."
-          bq ls --project_id=$GCP_PROJECT
+    - name: Verify Manifest Exists
+      run: |
+        ls -R dbt_dagster_pipeline/target
 
+        test -f dbt_dagster_pipeline/target/manifest.json
 
-      - name: Install dbt Dependencies
-        working-directory: ./dbt_dagster_pipeline
-        env:
-          DBT_PROFILES_DIR: .
-        run: |
-          uv run dbt deps
-
-      - name: Generate dbt Manifest
-        working-directory: ./dbt_dagster_pipeline
-        env:
-          DBT_PROFILES_DIR: .
-        run: |
-          uv run dbt deps
-          uv run dbt parse
-          
-      - name: Execute Quality Gate Checks
-        run: |
-          uv run pre-commit run --all-files
+    - name: Execute Quality Gate Checks
+      run: |
+        uv run pre-commit run --all-files --show-diff-on-failure
 
   # ==================================================================
   # JOB 2: dbt Validation
@@ -141,7 +118,7 @@ jobs:
       # Install dependencies
       # ---------------------------------------------------------------
       - name: Install Dependencies
-        run: uv sync
+        run: uv sync --group dev
 
       # ---------------------------------------------------------------
       # Authenticate to Google Cloud
@@ -201,6 +178,11 @@ jobs:
       # ---------------------------------------------------------------
       # Auto Merge PR
       # ---------------------------------------------------------------
+      
+      - name: Verify GitHub CLI
+        run: gh --version
+      
+      
       - name: Auto Merge Pull Request
         if: success()
         env:
