@@ -2,11 +2,16 @@ name: Dev Testing & Auto-Merge
 
 on:
   pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   dbt-ci-test:
+    name: Run dbt Validation Checks
     runs-on: ubuntu-latest
 
     permissions:
@@ -29,17 +34,22 @@ jobs:
         run: uv sync
 
       - name: Execute Data Testing & Validation
+        working-directory: ./dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
+          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+          BQ_LOCATION: ${{ vars.BQ_LOCATION }}
+          DBT_DATASET_PREFIX: ${{ vars.DBT_DATASET_PREFIX }}
           DB_PASSWORD: ${{ secrets.DB_DEV_PASSWORD }}
-        working-directory: ./dbt_dagster_pipeline
         run: |
           uv run dbt deps
           uv run dbt debug
           uv run dbt build
 
-      - name: Auto Merge PR
+      - name: Auto Merge Pull Request
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --squash \
+            --delete-branch
