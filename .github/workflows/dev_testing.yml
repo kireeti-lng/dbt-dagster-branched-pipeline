@@ -10,8 +10,43 @@ on:
       - reopened
 
 jobs:
+  # ==================================================================
+  # JOB 1: Code Scanning & Gate Pass (SQLFluff & dbt-checkpoint)
+  # ==================================================================
+  dbt-quality-gate:
+    name: Code Scanning & Gate Pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Linting Dependencies
+        run: |
+          uv pip install pre-commit sqlfluff sqlfluff-templater-dbt dbt-bigquery dbt-checkpoint
+
+      - name: Pre-compile dbt Dependencies for Scanner
+        working-directory: ./dbt_dagster_pipeline
+        run: |
+          uv run dbt deps
+
+      - name: Execute Quality Gate Checks
+        run: |
+          uv run pre-commit run --all-files
+
+  # ==================================================================
+  # JOB 2: Original Validation and Execution (Runs if Gate Passes)
+  # ==================================================================
   dbt-ci-test:
     name: Run dbt Validation Checks
+    needs: dbt-quality-gate # <--- Connects the gate pass to this job
     runs-on: ubuntu-latest
 
     permissions:
