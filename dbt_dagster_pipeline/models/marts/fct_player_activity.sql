@@ -32,7 +32,8 @@ deduped as (
 )
 
 select
-    {{ surrogate_key(['game_name', 'player_key', 'event_timestamp']) }} as activity_key,
+    {{ surrogate_key(['game_name', 'player_key', 'event_timestamp']) }}
+        as activity_key,
     player_key,
     player_name,
     player_progress,

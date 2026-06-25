@@ -28,17 +28,21 @@
 }}
 
 with unioned as (
-    select * from {{ ref('int_player_activity_unioned') }}
+    select * from {{ ref('int_player_activity_unioned') }} as src
 
     {% if is_incremental() %}
     -- Only new rows, minus a lookback window for late arrivals.
-    where event_timestamp > (
-        select timestamp_sub(
-                   coalesce(max(event_timestamp), timestamp '1900-01-01 00:00:00'),
-                   interval {{ var('event_lookback_hours', 0) }} hour
-               )
-        from {{ this }}
-    )
+    where src.event_timestamp > (
+        select
+            timestamp_sub(
+                coalesce(
+                    max(existing.event_timestamp),
+                    timestamp '1900-01-01 00:00:00'
+                ),
+                interval {{ var('event_lookback_hours', 0) }} hour
+            )
+        from {{ this }} as existing
+        )
     {% endif %}
 ),
 
@@ -53,7 +57,8 @@ deduped as (
 )
 
 select
-    {{ surrogate_key(['game_name', 'player_key', 'event_timestamp']) }} as activity_key,
+    {{ surrogate_key(['game_name', 'player_key', 'event_timestamp']) }}
+        as activity_key,
     player_key,
     player_name,
     player_progress,

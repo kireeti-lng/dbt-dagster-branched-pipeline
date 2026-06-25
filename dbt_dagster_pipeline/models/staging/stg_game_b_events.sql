@@ -21,13 +21,13 @@ with source as (
 
 canonical as (
     select
-        cast(user_id as string)           as player_key,
-        display_name                      as player_name,
-        rank                              as player_progress,
-        score                             as player_score,
-        'game_b'                          as game_name,
-        cast(`timestamp` as timestamp)    as event_timestamp,
-        current_timestamp()               as load_timestamp
+        cast(user_id as string) as player_key,
+        display_name as player_name,
+        rank as player_progress,
+        score as player_score,
+        'game_b' as game_name,
+        cast(`timestamp` as timestamp) as event_timestamp,
+        current_timestamp() as load_timestamp
     from source
 )
 

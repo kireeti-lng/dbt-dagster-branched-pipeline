@@ -1,8 +1,9 @@
 repos:
-  - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
-    rev: v2.0.9
-    hooks:
-      - id: check-model-has-description
-        args:
-          - --manifest
-          - dbt_dagster_pipeline/target/manifest.json
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+    - id: trailing-whitespace
+    - id: check-yaml
+    - id: check-json
+    - id: check-merge-conflict

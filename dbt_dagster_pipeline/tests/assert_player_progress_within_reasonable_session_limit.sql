@@ -4,4 +4,4 @@ select
     player_key,
     player_progress
 from {{ ref('fct_player_activity') }}
-where player_progress > 50000 
+where player_progress > 50000

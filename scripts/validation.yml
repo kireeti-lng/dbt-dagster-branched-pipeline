@@ -1,0 +1,23 @@
+project:
+  root: dbt_dagster_pipeline
+
+checks:
+  project_structure: true
+  yaml_syntax: true
+  models: true
+  sources: true
+  macros: true
+  data_tests: true
+  duplicate_resources: true
+  orphan_resources: true
+
+required:
+  model_description: true
+  source_description: true
+  macro_description: true
+  data_test_description: true
+
+ignore:
+  - target
+  - dbt_packages
+  - logs

@@ -1,20 +1,34 @@
 # =====================================================================
 # setup-env.ps1
 #
-# Loads all environment variables required for local dbt validation.
+# Loads and validates the local environment required for dbt.
 #
 # Usage:
-#   .\scripts\setup-env.ps1
+#   . .\scripts\setup-env.ps1
+#
+# NOTE:
+#   Dot-source this script so environment variables remain available:
+#
+#       . .\scripts\setup-env.ps1
+#
 # =====================================================================
 
+$ErrorActionPreference = "Stop"
+
 Write-Host ""
-Write-Host "=========================================="
-Write-Host " Loading Local Environment"
-Write-Host "=========================================="
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "           LOCAL ENVIRONMENT SETUP" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # ---------------------------------------------------------------------
-# UPDATE THESE VALUES FOR YOUR MACHINE
+# Repository Root
+# ---------------------------------------------------------------------
+
+$RepoRoot = Split-Path $PSScriptRoot -Parent
+
+# ---------------------------------------------------------------------
+# Configure Environment Variables
 # ---------------------------------------------------------------------
 
 $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\Users\KireetiChennuru\Downloads\lng-geo-play-dbt-github-actions.json"
@@ -25,29 +39,54 @@ $env:BQ_LOCATION = "US"
 
 $env:DBT_DATASET_PREFIX = "test_"
 
-# Optional (if your project uses these)
-
-$env:DBT_PROFILES_DIR = (Join-Path (Get-Location) "dbt_dagster_pipeline")
+$env:DBT_PROFILES_DIR = Join-Path $RepoRoot "dbt_dagster_pipeline"
 
 # ---------------------------------------------------------------------
-# Validate Service Account File
+# Validation
 # ---------------------------------------------------------------------
+
+Write-Host "Validating environment..." -ForegroundColor Yellow
+Write-Host ""
+
+# Service Account
 
 if (!(Test-Path $env:GOOGLE_APPLICATION_CREDENTIALS)) {
 
-    Write-Host "ERROR:"
-    Write-Host ""
-    Write-Host "Service Account JSON not found."
-    Write-Host ""
-    Write-Host $env:GOOGLE_APPLICATION_CREDENTIALS
-    exit 1
+    throw @"
+
+Service Account JSON not found.
+
+$($env:GOOGLE_APPLICATION_CREDENTIALS)
+
+"@
+}
+
+# dbt project
+
+if (!(Test-Path "$($env:DBT_PROFILES_DIR)\dbt_project.yml")) {
+
+    throw "dbt_project.yml not found."
+}
+
+# profiles.yml
+
+if (!(Test-Path "$($env:DBT_PROFILES_DIR)\profiles.yml")) {
+
+    throw "profiles.yml not found."
+}
+
+# pyproject.toml
+
+if (!(Test-Path "$RepoRoot\pyproject.toml")) {
+
+    throw "pyproject.toml not found."
 }
 
 # ---------------------------------------------------------------------
-# Display Configuration
+# Display Environment
 # ---------------------------------------------------------------------
 
-Write-Host "Environment successfully loaded."
+Write-Host "Environment successfully loaded." -ForegroundColor Green
 Write-Host ""
 
 Write-Host "GOOGLE_APPLICATION_CREDENTIALS"
@@ -70,6 +109,7 @@ Write-Host "DBT_PROFILES_DIR"
 Write-Host "  $($env:DBT_PROFILES_DIR)"
 Write-Host ""
 
-Write-Host "=========================================="
-Write-Host " Environment Ready"
-Write-Host "=========================================="
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host " Environment Ready" -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host ""

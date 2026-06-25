@@ -11,122 +11,65 @@ on:
 
 jobs:
 
-  # ==================================================================
-  # JOB 1: Code Quality Gate
-  # ==================================================================
+  # ===============================================================
+  # JOB 1 : Code Quality Gate
+  # ===============================================================
   dbt-quality-gate:
-    name: Code Scanning & Gate Pass
+    name: Code Quality Gate
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------------------------------------------------------
-      # Checkout Repository
-      # ---------------------------------------------------------------
-      - name: Checkout Code Base
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------------------
-      # Setup Python
-      # ---------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # ---------------------------------------------------------------
-      # Setup uv
-      # ---------------------------------------------------------------
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      # ---------------------------------------------------------------
-      # Install Project Dependencies
-      # ---------------------------------------------------------------
-      - name: Install Project Dependencies
-        run: uv sync --group dev
+      - name: Install Dependencies
+        run: uv sync
 
-      # ---------------------------------------------------------------
-      # Authenticate to Google Cloud
-      # ---------------------------------------------------------------
       - name: Authenticate to Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           create_credentials_file: true
 
-      # ---------------------------------------------------------------
-      # Setup Google Cloud SDK
-      # ---------------------------------------------------------------
-      - name: Setup Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: bq
-
-      # ---------------------------------------------------------------
-      # Verify Authentication
-      # ---------------------------------------------------------------
-      - name: Verify Authentication
-        run: |
-          echo "Authenticated Account:"
-          gcloud auth list
-
-          echo ""
-          echo "Current Configuration:"
-          gcloud config list
-
-      # ---------------------------------------------------------------
-      # Verify BigQuery Access
-      # ---------------------------------------------------------------
-      - name: Verify BigQuery Access
+      - name: Install dbt Packages
+        working-directory: dbt_dagster_pipeline
         env:
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          DBT_PROFILES_DIR: .
         run: |
-          echo "Listing datasets..."
-          bq ls --project_id=$GCP_PROJECT
+          uv run dbt deps
 
-      # ---------------------------------------------------------------
-      # Generate dbt Manifest
-      # ---------------------------------------------------------------
-      - name: Generate dbt Manifest
-        working-directory: ./dbt_dagster_pipeline
+      - name: Parse dbt Project
+        working-directory: dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
           BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
           DBT_DATASET_PREFIX: ${{ secrets.DBT_DATASET_PREFIX }}
         run: |
-          uv run dbt deps
           uv run dbt parse --target ci
 
-      # ---------------------------------------------------------------
-      # Verify Manifest Exists
-      # ---------------------------------------------------------------
-      - name: Verify Manifest Exists
+      - name: Repository Validation
         run: |
-          echo "Checking manifest..."
+          uv run python scripts/validate_dbt.py
 
-          ls -R dbt_dagster_pipeline/target
-
-          if [ ! -f dbt_dagster_pipeline/target/manifest.json ]; then
-            echo "ERROR: manifest.json not found"
-            exit 1
-          fi
-
-          echo "manifest.json generated successfully"
-
-      # ---------------------------------------------------------------
-      # Execute Pre-Commit Checks
-      # ---------------------------------------------------------------
-      - name: Execute Quality Gate Checks
+      - name: Run Pre-Commit Checks
         run: |
           uv run pre-commit run --all-files --show-diff-on-failure
 
-  # ==================================================================
-  # JOB 2: dbt Validation
-  # ==================================================================
+  # ===============================================================
+  # JOB 2 : dbt Build & Validation
+  # ===============================================================
   dbt-ci-test:
-    name: Run dbt Validation Checks
+    name: dbt Build Validation
     needs: dbt-quality-gate
     runs-on: ubuntu-latest
 
@@ -136,77 +79,32 @@ jobs:
       id-token: write
 
     steps:
-      # ---------------------------------------------------------------
-      # Checkout Repository
-      # ---------------------------------------------------------------
-      - name: Checkout Code Base
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # ---------------------------------------------------------------
-      # Setup Python
-      # ---------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # ---------------------------------------------------------------
-      # Setup uv
-      # ---------------------------------------------------------------
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      # ---------------------------------------------------------------
-      # Install Dependencies
-      # ---------------------------------------------------------------
-      - name: Install Project Dependencies
-        run: uv sync --group dev
+      - name: Install Dependencies
+        run: uv sync
 
-      # ---------------------------------------------------------------
-      # Authenticate to Google Cloud
-      # ---------------------------------------------------------------
       - name: Authenticate to Google Cloud
-        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           create_credentials_file: true
 
-      # ---------------------------------------------------------------
-      # Setup Google Cloud SDK
-      # ---------------------------------------------------------------
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
-        with:
-          install_components: bq
 
-      # ---------------------------------------------------------------
-      # Verify Authentication
-      # ---------------------------------------------------------------
-      - name: Verify Authentication
-        run: |
-          echo "Authenticated Account:"
-          gcloud auth list
-
-          echo ""
-          echo "Current Configuration:"
-          gcloud config list
-
-      # ---------------------------------------------------------------
-      # Verify BigQuery Access
-      # ---------------------------------------------------------------
-      - name: Verify BigQuery Access
-        env:
-          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-        run: |
-          echo "Listing datasets..."
-          bq ls --project_id=$GCP_PROJECT
-
-      # ---------------------------------------------------------------
-      # Validate dbt Project
-      # ---------------------------------------------------------------
-      - name: Execute dbt Validation
-        working-directory: ./dbt_dagster_pipeline
+      - name: Build dbt Project
+        working-directory: dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
@@ -217,15 +115,6 @@ jobs:
           uv run dbt debug --target ci
           uv run dbt build --target ci
 
-      # ---------------------------------------------------------------
-      # Verify GitHub CLI
-      # ---------------------------------------------------------------
-      - name: Verify GitHub CLI
-        run: gh --version
-
-      # ---------------------------------------------------------------
-      # Auto Merge Pull Request
-      # ---------------------------------------------------------------
       - name: Auto Merge Pull Request
         if: success()
         env:

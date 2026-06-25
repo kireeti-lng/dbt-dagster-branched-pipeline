@@ -14,15 +14,7 @@ dependencies = [
     "dbt-bigquery==1.11.2",
 
     "google-cloud-bigquery>=3.0",
-]
 
-[dependency-groups]
-dev = [
-    "pre-commit",
-    "sqlfluff",
-    "sqlfluff-templater-dbt",
+    "pre-commit>=4.3.0",
+    "pyyaml>=6.0.2",
 ]
-
-[tool.dagster]
-module_name = "orchestration.definitions"
-code_location_name = "dbt-dagster-branched-pipeline"
