@@ -28,10 +28,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Execute dbt Validation
+      - name: Execute Data Testing & Validation
         env:
           DBT_PROFILES_DIR: .
           DB_PASSWORD: ${{ secrets.DB_DEV_PASSWORD }}
+        working-directory: ./dbt_dagster_pipeline
         run: |
           uv run dbt deps
           uv run dbt debug
