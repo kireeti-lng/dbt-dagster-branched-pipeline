@@ -3,29 +3,20 @@ version: 2
 sources:
   - name: raw
     description: "Raw gaming telemetry tables loaded from BigQuery."
-
-    database: "{{ env_var('GCP_PROJECT') }}"
-    schema: "{{ env_var('DBT_DATASET_PREFIX') }}_raw"
-
+    schema: gamedata_64156695_staging
+    config:
+      meta:
+        game_id: "placeholder"
+        
     tables:
 
-      - name: players
+      - name: raw_game_a_events
         description: "Raw player master data."
 
-      - name: player_activity
+      - name: raw_game_b_events
         description: "Raw gameplay activity events."
 
-      - name: sessions
-        description: "Player gameplay sessions."
 
-      - name: purchases
-        description: "Player purchase events."
-
-      - name: economy
-        description: "Virtual economy transactions."
-
-      - name: ads
-        description: "Advertising revenue events."
 
 
 models:
@@ -34,6 +25,10 @@ models:
     description: >
       Combines player activity from multiple gameplay event sources
       into a unified intermediate model used by downstream marts.
+  
+  - name: fct_player_activity
+
+  - name: fct_player_activity_incremental
 
 
 macros:
