@@ -1,0 +1,62 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw gaming telemetry tables loaded from BigQuery."
+
+    database: "{{ env_var('GCP_PROJECT') }}"
+    schema: "{{ env_var('DBT_DATASET_PREFIX') }}_raw"
+
+    tables:
+
+      - name: players
+        description: "Raw player master data."
+
+      - name: player_activity
+        description: "Raw gameplay activity events."
+
+      - name: sessions
+        description: "Player gameplay sessions."
+
+      - name: purchases
+        description: "Player purchase events."
+
+      - name: economy
+        description: "Virtual economy transactions."
+
+      - name: ads
+        description: "Advertising revenue events."
+
+
+models:
+
+  - name: int_player_activity_unioned
+    description: >
+      Combines player activity from multiple gameplay event sources
+      into a unified intermediate model used by downstream marts.
+
+
+macros:
+
+  - name: surrogate_key
+    description: >
+      Generates a deterministic surrogate key using MD5 hashing.
+
+  - name: generate_schema_name
+    description: >
+      Generates environment-specific schema names for dbt models.
+
+
+data_tests:
+
+  - name: assert_player_key_has_unique_name
+    description: >
+      Ensures every player key maps to exactly one player name.
+
+  - name: assert_player_progress_within_reasonable_session_limit
+    description: >
+      Ensures player progression does not exceed expected session limits.
+
+  - name: assert_timestamps_are_not_in_the_future
+    description: >
+      Validates event timestamps are not later than the current timestamp.    
