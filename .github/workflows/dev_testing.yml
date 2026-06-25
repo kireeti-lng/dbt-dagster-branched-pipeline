@@ -93,9 +93,9 @@ jobs:
         working-directory: ./dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
-          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
-          BQ_LOCATION: ${{ vars.BQ_LOCATION }}
-          DBT_DATASET_PREFIX: ${{ vars.DBT_DATASET_PREFIX }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
+          DBT_DATASET_PREFIX: ${{ secrets.DBT_DATASET_PREFIX }}
         run: |
           uv run dbt deps
           uv run dbt debug --target ci
