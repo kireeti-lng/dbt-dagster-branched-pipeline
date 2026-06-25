@@ -1,0 +1,9 @@
+version: 2
+
+macros:
+
+  - name: surrogate_key
+    description: "Generates deterministic MD5 surrogate keys."
+
+  - name: generate_schema_name
+    description: "Generates target schemas based on environment."

@@ -1,28 +1,38 @@
 version: 2
 
+sources:
+  - name: raw_tables
+    description: "Raw game events landed by the ingestion layer."
+    schema: raw
 
+    config:
+      freshness:
+        warn_after:
+          count: 24
+          period: hour
+        error_after:
+          count: 72
+          period: hour
 
-macros:
+    loaded_at_field: _ingested_at
 
-  - name: surrogate_key
-    description: >
-      Generates a deterministic surrogate key using MD5 hashing.
+    tables:
+      - name: raw_game_a_events
+        description: "Raw events from Game A."
+        columns:
+          - name: player_id
+            data_tests:
+              - not_null
+          - name: event_time
+            data_tests:
+              - not_null
 
-  - name: generate_schema_name
-    description: >
-      Generates environment-specific schema names for dbt models.
-
-
-data_tests:
-
-  - name: assert_player_key_has_unique_name
-    description: >
-      Ensures every player key maps to exactly one player name.
-
-  - name: assert_player_progress_within_reasonable_session_limit
-    description: >
-      Ensures player progression does not exceed expected session limits.
-
-  - name: assert_timestamps_are_not_in_the_future
-    description: >
-      Validates event timestamps are not later than the current timestamp.    
+      - name: raw_game_b_events
+        description: "Raw events from Game B."
+        columns:
+          - name: user_id
+            data_tests:
+              - not_null
+          - name: timestamp
+            data_tests:
+              - not_null
