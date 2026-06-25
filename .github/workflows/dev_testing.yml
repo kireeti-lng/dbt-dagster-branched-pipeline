@@ -33,17 +33,15 @@ jobs:
       - name: Create virtual environment
         run: uv venv
 
-      - name: Install dependencies
-        run: uv pip install -r requirements.txt
+      - name: Install Dependencies
+        run: uv sync
 
       - name: Install Linting Dependencies
         run: |
           uv pip install \
             pre-commit \
             sqlfluff \
-            sqlfluff-templater-dbt \
-            dbt-bigquery \
-            dbt-checkpoint
+            sqlfluff-templater-dbt
 
       - name: Install dbt Dependencies
         working-directory: ./dbt_dagster_pipeline
