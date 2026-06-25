@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: fct_player_activity
+    description: "Unified, deduplicated player activity across all games."
+
+  - name: fct_player_activity_incremental
+    description: "Incremental player activity fact table."

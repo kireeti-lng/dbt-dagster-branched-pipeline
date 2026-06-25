@@ -1,0 +1,20 @@
+[project]
+name = "dbt-dagster-branched-pipeline"
+version = "0.1.0"
+description = "Dagster + dbt pipeline"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "dagster==1.13.10",
+    "dagster-dbt==0.29.10",
+    "dagster-webserver==1.13.10",
+
+    "dbt-core==1.11.11",
+    "dbt-bigquery==1.11.2",
+
+    "google-cloud-bigquery>=3.0",
+
+    "pre-commit>=4.3.0",
+    "pyyaml>=6.0.2",
+]

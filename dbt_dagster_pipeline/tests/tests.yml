@@ -1,0 +1,11 @@
+version: 2
+
+data_tests:
+  - name: assert_player_key_has_unique_name
+    description: "Ensures every player key maps to exactly one player."
+
+  - name: assert_player_progress_within_reasonable_session_limit
+    description: "Ensures player progression stays within expected limits."
+
+  - name: assert_timestamps_are_not_in_the_future
+    description: "Ensures timestamps are not in the future."

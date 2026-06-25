@@ -1,0 +1,125 @@
+name: Dev Testing & Auto-Merge
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+
+  # ===============================================================
+  # JOB 1 : Code Quality Gate
+  # ===============================================================
+  dbt-quality-gate:
+    name: Code Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+
+      - name: Install dbt Packages
+        working-directory: dbt_dagster_pipeline
+        env:
+          DBT_PROFILES_DIR: .
+        run: |
+          uv run dbt deps
+
+      - name: Parse dbt Project
+        working-directory: dbt_dagster_pipeline
+        env:
+          DBT_PROFILES_DIR: .
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
+          DBT_DATASET_PREFIX: ${{ secrets.DBT_DATASET_PREFIX }}
+        run: |
+          uv run dbt parse --target ci
+
+      - name: Repository Validation
+        run: |
+          uv run python scripts/validate_dbt.py
+
+      - name: Run Pre-Commit Checks
+        run: |
+          uv run pre-commit run --all-files --show-diff-on-failure
+
+  # ===============================================================
+  # JOB 2 : dbt Build & Validation
+  # ===============================================================
+  dbt-ci-test:
+    name: dbt Build Validation
+    needs: dbt-quality-gate
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build dbt Project
+        working-directory: dbt_dagster_pipeline
+        env:
+          DBT_PROFILES_DIR: .
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+          BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
+          DBT_DATASET_PREFIX: ${{ secrets.DBT_DATASET_PREFIX }}
+        run: |
+          uv run dbt deps
+          uv run dbt debug --target ci
+          uv run dbt build --target ci
+
+      - name: Auto Merge Pull Request
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --squash \
+            --delete-branch
