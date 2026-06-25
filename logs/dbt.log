@@ -42,3 +42,18 @@ Runtime Error
 [0m14:33:44.328444 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001989C74B0B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001989B6A6210>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001989B6A6FC0>]}
 [0m14:33:44.329439 [debug] [MainThread]: Flushing usage events
 [0m14:33:45.957712 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m18:53:36.862514 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A2919157F0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A2948FEFC0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A2948FDCD0>]}
+
+
+============================== 18:53:36.868514 | 3e91d334-cd38-40ec-ab9b-135055649b2e ==============================
+[0m18:53:36.868514 [info ] [MainThread]: Running with dbt=1.11.11
+[0m18:53:36.869517 [debug] [MainThread]: running dbt with arguments {'version_check': 'True', 'no_print': 'None', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'empty': 'None', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\dbt_lng\\dbt-dagster-branched-pipeline\\dbt_dagster_pipeline', 'use_colors': 'True', 'invocation_command': 'dbt ls --resource-type model', 'indirect_selection': 'eager', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m18:53:36.869517 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\dbt_lng\dbt-dagster-branched-pipeline\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m18:53:36.871024 [debug] [MainThread]: Command `dbt ls` failed at 18:53:36.871024 after 0.22 seconds
+[0m18:53:36.872032 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A294941A00>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A294940EF0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002A29349CEC0>]}
+[0m18:53:36.872032 [debug] [MainThread]: Flushing usage events
+[0m18:53:38.379464 [debug] [MainThread]: An error was encountered while trying to flush usage events
