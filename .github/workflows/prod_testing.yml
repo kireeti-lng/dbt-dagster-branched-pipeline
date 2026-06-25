@@ -1,0 +1,40 @@
+name: Production Release Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  dbt-production-deploy:
+    name: Build Production Warehouse Data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Base
+        uses: actions/checkout@v4
+
+      - name: Initialize Python Runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Deploy uv Package Manager
+        run: |
+          curl -LsSf https://astral.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Replicate Dependencies from uv.lock
+        run: uv sync
+
+      - name: Execute Production Database Build
+        env:
+          DBT_PROFILES_DIR: .
+          DB_PROD_PASSWORD: ${{ secrets.DB_PROD_PASSWORD }}
+        run: |
+          uv run dbt deps
+          uv run dbt build
+
+      - name: Update Dagster Orchestration Definitions
+        run: |
+          echo "Updating live Dagster code location instance..."
+          # Insert your specific Dagster Cloud or hosted instances deployment commands here

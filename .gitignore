@@ -1,0 +1,10 @@
+# Built artifacts
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+.dagster_home/
+.tmp_dagster_home_*/
+__pycache__/
+*.pyc
+.venv/
+.env

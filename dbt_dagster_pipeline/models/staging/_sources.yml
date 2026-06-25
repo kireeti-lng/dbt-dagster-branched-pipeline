@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw game events, landed verbatim by the ingestion layer (dlt-equivalent)."
+    schema: raw
+    # Source freshness: warn/error if the newest ingested row gets stale.
+    # Here it's checked against _ingested_at (loaded_at_field).
+    loaded_at_field: _ingested_at
+    freshness:
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 72, period: hour }
+    tables:
+      - name: raw_game_a_events
+        description: "Game A (RPG). Integer player ids; progress=level, value=xp."
+        columns:
+          - name: player_id
+            data_tests: [not_null]
+          - name: event_time
+            data_tests: [not_null]
+      - name: raw_game_b_events
+        description: "Game B (Racing). String user ids; progress=rank, value=score."
+        columns:
+          - name: user_id
+            data_tests: [not_null]
+          - name: timestamp
+            data_tests: [not_null]
