@@ -10,12 +10,14 @@ on:
       - reopened
 
 jobs:
+
   # ==================================================================
-  # JOB 1: Code Scanning & Gate Pass (SQLFluff & dbt-checkpoint)
+  # JOB 1: Code Quality Gate
   # ==================================================================
   dbt-quality-gate:
     name: Code Scanning & Gate Pass
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code Base
         uses: actions/checkout@v4
@@ -30,10 +32,17 @@ jobs:
 
       - name: Install Linting Dependencies
         run: |
-          uv pip install pre-commit sqlfluff sqlfluff-templater-dbt dbt-bigquery dbt-checkpoint
+          uv pip install \
+            pre-commit \
+            sqlfluff \
+            sqlfluff-templater-dbt \
+            dbt-bigquery \
+            dbt-checkpoint
 
-      - name: Pre-compile dbt Dependencies for Scanner
+      - name: Install dbt Dependencies
         working-directory: ./dbt_dagster_pipeline
+        env:
+          DBT_PROFILES_DIR: .
         run: |
           uv run dbt deps
 
@@ -42,11 +51,11 @@ jobs:
           uv run pre-commit run --all-files
 
   # ==================================================================
-  # JOB 2: Original Validation and Execution (Runs if Gate Passes)
+  # JOB 2: dbt Validation
   # ==================================================================
   dbt-ci-test:
     name: Run dbt Validation Checks
-    needs: dbt-quality-gate # <--- Connects the gate pass to this job
+    needs: dbt-quality-gate
     runs-on: ubuntu-latest
 
     permissions:
@@ -55,35 +64,35 @@ jobs:
       id-token: write
 
     steps:
-      # ------------------------------------------------------------------
-      # Checkout Repository
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
+      # Checkout
+      # ---------------------------------------------------------------
       - name: Checkout Code Base
         uses: actions/checkout@v4
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Python
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Install uv
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      # ------------------------------------------------------------------
-      # Install Python Dependencies
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
+      # Install dependencies
+      # ---------------------------------------------------------------
       - name: Install Dependencies
         run: uv sync
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Authenticate to Google Cloud
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -91,17 +100,17 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           create_credentials_file: true
 
-      # ------------------------------------------------------------------
-      # Install Google Cloud SDK
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
+      # Install gcloud
+      # ---------------------------------------------------------------
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
-          install_components: "bq"
+          install_components: bq
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Verify Authentication
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Verify Authentication
         run: |
           echo "Authenticated Account:"
@@ -111,19 +120,19 @@ jobs:
           echo "Current Configuration:"
           gcloud config list
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Verify BigQuery Access
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Verify BigQuery Access
         env:
-          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: |
           echo "Listing datasets in $GCP_PROJECT..."
           bq ls --project_id=$GCP_PROJECT
 
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       # Run dbt Validation
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
       - name: Execute dbt Validation
         working-directory: ./dbt_dagster_pipeline
         env:
@@ -136,9 +145,9 @@ jobs:
           uv run dbt debug --target ci
           uv run dbt build --target ci
 
-      # ------------------------------------------------------------------
-      # Auto Merge Pull Request
-      # ------------------------------------------------------------------
+      # ---------------------------------------------------------------
+      # Auto Merge PR
+      # ---------------------------------------------------------------
       - name: Auto Merge Pull Request
         if: success()
         env:
