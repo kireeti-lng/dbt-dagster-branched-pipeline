@@ -119,6 +119,37 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# ---------------------------------------------------------------------
+# Compile dbt
+# ---------------------------------------------------------------------
+
+Write-Host ""
+Write-Host "Compiling dbt blueprints..." -ForegroundColor Yellow
+
+uv run dbt compile --target ci
+
+if ($LASTEXITCODE -ne 0) {
+
+    Pop-Location
+
+    Write-Host ""
+    Write-Host "dbt compile failed." -ForegroundColor Red
+    exit 1
+}
+
+Pop-Location
+
+
+
+if ($LASTEXITCODE -ne 0) {
+
+    Pop-Location
+
+    Write-Host ""
+    Write-Host "dbt parse failed." -ForegroundColor Red
+    exit 1
+}
+
 Pop-Location
 
 # ---------------------------------------------------------------------
