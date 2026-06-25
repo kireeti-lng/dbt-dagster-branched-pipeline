@@ -1,7 +1,7 @@
 version: 2
 
 sources:
-  - name: raw
+  - name: raw_tables
     description: "Raw game events, landed verbatim by the ingestion layer (dlt-equivalent)."
     schema: raw
     # Source freshness: warn/error if the newest ingested row gets stale.

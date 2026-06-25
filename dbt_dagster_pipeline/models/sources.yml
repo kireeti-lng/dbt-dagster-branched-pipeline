@@ -1,23 +1,5 @@
 version: 2
 
-sources:
-  - name: raw
-    description: "Raw gaming telemetry tables loaded from BigQuery."
-    schema: gamedata_64156695_staging
-    config:
-      meta:
-        game_id: "placeholder"
-        
-    tables:
-
-      - name: raw_game_a_events
-        description: "Raw player master data."
-
-      - name: raw_game_b_events
-        description: "Raw gameplay activity events."
-
-
-
 
 models:
 
