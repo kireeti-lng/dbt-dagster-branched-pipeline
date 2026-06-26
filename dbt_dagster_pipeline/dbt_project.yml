@@ -10,21 +10,39 @@ seed-paths: ["seeds"]
 target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
-# Layer -> schema routing. The generate_schema_name override (macros/) turns these
-# into clean schema names (staging / intermediate / marts) instead of dev_staging etc.
+# Layer -> schema routing.
 models:
   gaming_platform:
     staging:
       +materialized: view
-      +schema: gamedata_64156695_staging
+      +schema: staging
     intermediate:
       +materialized: view
-      +schema: gamedata_64156695_staging
+      +schema: intermediate
     marts:
       +materialized: table
-      +schema: gamedata_64156695_staging
+      +schema: marts
 
-# Compile-time vars. canonical_field_map documents intent; the real mapping lives
-# in each staging model. event_lookback_hours feeds the incremental watermark demo.
+dispatch:
+  - macro_namespace: dbt
+    search_order: ['dbt_project_evaluator', 'dbt']
+
+# Unified variables block
 vars:
   event_lookback_hours: 0
+  dbt_project_evaluator:
+    model_types:
+      - staging
+      - intermediate
+      - marts
+      - other # Added as a fallback safety net for internal package nodes
+
+    # Custom directory folder path mapping
+    staging_folder_name: "staging"
+    intermediate_folder_name: "intermediate"
+    marts_folder_name: "marts"
+
+    # Mute structural layout rules (prevents style warnings from cluttering CI/CD logs)
+    check_source_directories: false
+    check_model_directories: false
+    check_test_directories: false

@@ -16,23 +16,30 @@ jobs:
       - name: Initialize Python Runtime
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12' # Aligned with dev_testing.yml
 
       - name: Deploy uv Package Manager
-        run: |
-          curl -LsSf https://astral.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        uses: astral-sh/setup-uv@v5 # Modern, cached astral action
 
       - name: Replicate Dependencies from uv.lock
         run: uv sync
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+
       - name: Execute Production Database Build
+        working-directory: dbt_dagster_pipeline
         env:
           DBT_PROFILES_DIR: .
-          DB_PROD_PASSWORD: ${{ secrets.DB_PROD_PASSWORD }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT_PROD }}
+          BQ_LOCATION: ${{ secrets.BQ_LOCATION }}
+          DBT_DATASET_PREFIX: prod # Enforce your prod namespace
         run: |
           uv run dbt deps
-          uv run dbt build
+          uv run dbt build --target prod # Explicit prod target destination
 
       - name: Update Dagster Orchestration Definitions
         run: |

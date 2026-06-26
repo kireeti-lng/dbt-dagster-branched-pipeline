@@ -1,0 +1,3 @@
+packages:
+  - package: dbt-labs/dbt_project_evaluator
+    version: 0.9.0 # Check the dbt Package Hub for the latest release version
